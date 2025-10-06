@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CKS_D@in Collaborative Python IDE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <h1>CKS_D@in Collaborative IDE</h1>
+            <p class="subtitle">Real-time collaborative coding platform</p>
+            
+            <div class="login-box">
+                <h2>Login to Workspace</h2>
+                
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for message in messages %}
+                                <div class="flash-message">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="login-tabs">
+                    <button class="tab-btn active" data-tab="credentials">Login with Credentials</button>
+                    <button class="tab-btn" data-tab="token">Login with Token</button>
+                </div>
+                
+                <!-- Credentials Login Form -->
+                <div class="tab-content active" id="credentials-tab">
+                    <form action="/login" method="post" class="login-form">
+                        <div class="input-group">
+                            <input type="text" name="username" placeholder="Username" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" name="password" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="login-btn">Login</button>
+                    </form>
+                </div>
+                
+                <!-- Token Login Form -->
+                <div class="tab-content" id="token-tab">
+                    <p class="token-info">Enter your unique login token to access the workspace</p>
+                    <div class="input-group">
+                        <input type="text" id="login-token" placeholder="Paste your login token here">
+                        <button id="login-with-token-btn">Login</button>
+                    </div>
+                </div>
+                
+                <div class="admin-info">
+                    <p>Are you an admin? <a href="/admin">Go to Admin Panel</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching functionality
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                
+                // Remove active class from all tabs
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                btn.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+        
+        // Login with token
+        document.getElementById('login-with-token-btn').addEventListener('click', function() {
+            const token = document.getElementById('login-token').value.trim();
+            if (token) {
+                window.location.href = `/login/${token}`;
+            } else {
+                alert('Please enter a valid login token');
+            }
+        });
+    </script>
+</body>
+</html>
