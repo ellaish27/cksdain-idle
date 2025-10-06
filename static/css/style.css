@@ -1,0 +1,140 @@
+/* Add these new styles to the existing CSS */
+
+/* Register Page Styles */
+.register-container {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.register-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(255, 111, 97, 0.5);
+}
+
+.register-box {
+    background-color: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--bg-tertiary);
+}
+
+.register-box h2 {
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.register-form .input-group {
+    margin-bottom: 15px;
+}
+
+.register-form input {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--bg-primary);
+    border-radius: 5px;
+    color: var(--text-primary);
+    font-size: 16px;
+}
+
+.register-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.register-btn:hover {
+    background-color: #ff5745;
+}
+
+.register-info {
+    margin-top: 20px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.register-info p {
+    margin-bottom: 8px;
+}
+
+/* Login Page Tabs */
+.login-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.token-info {
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+}
+
+/* Flash Messages */
+.flash-messages {
+    margin-bottom: 20px;
+}
+
+.flash-message {
+    padding: 10px 15px;
+    background-color: var(--bg-tertiary);
+    border-left: 4px solid var(--warning);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+/* Admin Panel Updates */
+.status-registered {
+    color: var(--success);
+    font-weight: 500;
+}
+
+.status-pending {
+    color: var(--warning);
+    font-weight: 500;
+}
+
+.color-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
