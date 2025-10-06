@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - CKS_D@in IDE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="register-container">
+            <h1>Create Your Account</h1>
+            <p class="subtitle">Complete your registration to access the collaborative workspace</p>
+            
+            <div class="register-box">
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for message in messages %}
+                                <div class="flash-message">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <form action="/register/{{ token }}" method="post" class="register-form">
+                    <div class="input-group">
+                        <input type="text" name="username" placeholder="Choose a username" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" name="password" placeholder="Create a password" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" name="confirm_password" placeholder="Confirm your password" required>
+                    </div>
+                    <button type="submit" class="register-btn">Create Account</button>
+                </form>
+                
+                <div class="register-info">
+                    <p>Your account will be created with the credentials you provide above.</p>
+                    <p>After registration, you can log in using your username and password.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
