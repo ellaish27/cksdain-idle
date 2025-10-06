@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - CKS_D@in IDE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="admin-container">
+            <h1>Admin Panel</h1>
+            
+            <div class="admin-section">
+                <h2>Your Admin Login Link</h2>
+                <div class="admin-link-box">
+                    <input type="text" value="{{ admin_link }}" readonly id="admin-link">
+                    <button id="copy-link-btn">Copy</button>
+                </div>
+                <p>Share this link only with trusted admins</p>
+            </div>
+            
+            <div class="admin-section">
+                <h2>Create New User</h2>
+                <form action="/create_user" method="post" class="create-user-form">
+                    <div class="input-group">
+                        <input type="text" name="username" placeholder="Username" required>
+                        <button type="submit">Create User</button>
+                    </div>
+                </form>
+                <p>Creating a user will generate a unique token that they can use to register for an account.</p>
+            </div>
+            
+            <div class="admin-section">
+                <h2>Manage Users</h2>
+                <div class="users-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Created</th>
+                                <th>Registration Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for token, user in users.items() %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.created_at }}</td>
+                                <td>
+                                    {% if user.registered %}
+                                    <span class="status-registered">Registered</span>
+                                    {% else %}
+                                    <span class="status-pending">Pending Registration</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not user.get('is_admin') %}
+                                    <a href="/promote_admin/{{ token }}" class="btn-promote">Promote to Admin</a>
+                                    {% else %}
+                                    <span class="admin-badge">ADMIN</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="admin-section">
+                <h2>Registered User Accounts</h2>
+                <div class="users-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Created</th>
+                                <th>Color</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for username, data in user_credentials.items() %}
+                            <tr>
+                                <td>{{ username }}</td>
+                                <td>{{ data.created_at }}</td>
+                                <td>
+                                    <span class="color-indicator" style="background-color: {{ data.color }};"></span>
+                                    {{ data.color }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('copy-link-btn').addEventListener('click', function() {
+            const adminLink = document.getElementById('admin-link');
+            adminLink.select();
+            document.execCommand('copy');
+            
+            const originalText = this.textContent;
+            this.textContent = 'Copied!';
+            setTimeout(() => {
+                this.textContent = originalText;
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
