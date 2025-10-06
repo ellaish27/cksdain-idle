@@ -1,0 +1,341 @@
+<!-- This file remains the same as in the previous version -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CKS_D@in Workspace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="logo">
+                <h1>CKS_D@in IDE</h1>
+            </div>
+            
+            <div class="user-info">
+                <span class="user-indicator" style="background-color: {{ user_color }};"></span>
+                <span class="username">{{ username }}</span>
+                {% if is_admin %}
+                <span class="admin-badge">ADMIN</span>
+                {% endif %}
+            </div>
+            
+            <div class="workspace-info">
+                <span>Workspace: {{ workspace_id }}</span>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Code Editor Panel -->
+            <div class="editor-panel">
+                <div class="editor-header">
+                    <h2>Python Editor</h2>
+                    <div class="editor-controls">
+                        <button id="run-code-btn">Run Code</button>
+                        <button id="clear-btn">Clear</button>
+                    </div>
+                </div>
+                
+                <div class="code-editor" id="code-editor"></div>
+                
+                <!-- Execution Console -->
+                <div class="console">
+                    <div class="console-header">
+                        <h3>Output Console</h3>
+                        <button id="clear-console-btn">Clear</button>
+                    </div>
+                    <div class="console-output" id="console-output"></div>
+                </div>
+            </div>
+            
+            <!-- Right Sidebar -->
+            <div class="sidebar">
+                <!-- Active Users -->
+                <div class="panel users-panel">
+                    <h3>Active Users</h3>
+                    <div class="users-list" id="users-list">
+                        <!-- Users will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Chat Panel -->
+                <div class="panel chat-panel">
+                    <h3>Workspace Chat</h3>
+                    <div class="chat-messages" id="chat-messages">
+                        <!-- Messages will be added here dynamically -->
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" id="message-input" placeholder="Type a message...">
+                        <button id="send-message-btn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize CodeMirror
+        const editor = CodeMirror(document.getElementById('code-editor'), {
+            value: '# Welcome to CKS_D@in Collaborative IDE\nprint("Hello, World!")',
+            mode: 'python',
+            theme: 'monokai',
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            indentUnit: 4,
+            indentWithTabs: false,
+            lineWrapping: true
+        });
+        
+        // Socket.IO connection
+        const socket = io();
+        
+        // User info
+        const currentUserId = '{{ session.user_id }}';
+        const currentUsername = '{{ session.username }}';
+        const currentUserColor = '{{ session.color }}';
+        const isAdmin = {{ 'true' if is_admin else 'false' }};
+        
+        // Track other users' cursors
+        const userCursors = {};
+        
+        // Handle code changes
+        editor.on('change', function() {
+            const code = editor.getValue();
+            const cursor = editor.getCursor();
+            
+            // Emit code change event
+            socket.emit('code_change', {
+                code: code,
+                cursor: cursor
+            });
+        });
+        
+        // Handle cursor movements
+        editor.on('cursorActivity', function() {
+            const cursor = editor.getCursor();
+            
+            // Emit cursor move event
+            socket.emit('cursor_move', {
+                cursor: cursor
+            });
+        });
+        
+        // Listen for code updates from other users
+        socket.on('code_update', function(data) {
+            if (data.user_id !== currentUserId) {
+                editor.setValue(data.code);
+                
+                // Update cursor position if available
+                if (data.cursor) {
+                    editor.setCursor(data.cursor);
+                }
+            }
+        });
+        
+        // Listen for cursor updates
+        socket.on('cursor_update', function(data) {
+            if (data.user_id !== currentUserId) {
+                // Create or update cursor marker
+                if (!userCursors[data.user_id]) {
+                    const cursorCoords = editor.cursorCoords(data.cursor, 'local');
+                    const cursorElement = document.createElement('div');
+                    cursorElement.className = 'user-cursor';
+                    cursorElement.style.backgroundColor = data.color || '#FF6F61';
+                    cursorElement.style.left = cursorCoords.left + 'px';
+                    cursorElement.style.top = cursorCoords.top + 'px';
+                    cursorElement.innerHTML = `<span class="cursor-label">${data.username || 'User'}</span>`;
+                    
+                    editor.getWrapperElement().appendChild(cursorElement);
+                    userCursors[data.user_id] = {
+                        element: cursorElement,
+                        coords: cursorCoords
+                    };
+                } else {
+                    const cursor = userCursors[data.user_id];
+                    const cursorCoords = editor.cursorCoords(data.cursor, 'local');
+                    
+                    cursor.element.style.left = cursorCoords.left + 'px';
+                    cursor.element.style.top = cursorCoords.top + 'px';
+                    cursor.coords = cursorCoords;
+                }
+            }
+        });
+        
+        // Listen for user connections
+        socket.on('user_connected', function(user) {
+            addUserToList(user);
+        });
+        
+        // Listen for user disconnections
+        socket.on('user_disconnected', function(data) {
+            removeUserFromList(data.id);
+            
+            // Remove cursor marker
+            if (userCursors[data.id]) {
+                userCursors[data.id].element.remove();
+                delete userCursors[data.id];
+            }
+        });
+        
+        // Listen for workspace users
+        socket.on('workspace_users', function(users) {
+            updateUsersList(users);
+        });
+        
+        // Listen for new chat messages
+        socket.on('new_message', function(message) {
+            addChatMessage(message);
+        });
+        
+        // Listen for execution results
+        socket.on('execution_result', function(data) {
+            const consoleOutput = document.getElementById('console-output');
+            
+            if (data.status === 'error' || data.status === 'timeout') {
+                consoleOutput.innerHTML += `<div class="console-error">${data.errors}</div>`;
+            } else {
+                consoleOutput.innerHTML += `<div class="console-output">${data.output}</div>`;
+            }
+            
+            // Scroll to bottom
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        });
+        
+        // Run code button
+        document.getElementById('run-code-btn').addEventListener('click', function() {
+            const code = editor.getValue();
+            socket.emit('execute_code', { code: code });
+            
+            // Clear previous output
+            document.getElementById('console-output').innerHTML = '<div class="console-info">Running code...</div>';
+        });
+        
+        // Clear console button
+        document.getElementById('clear-console-btn').addEventListener('click', function() {
+            document.getElementById('console-output').innerHTML = '';
+        });
+        
+        // Clear editor button
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            editor.setValue('');
+        });
+        
+        // Send message button
+        document.getElementById('send-message-btn').addEventListener('click', sendMessage);
+        
+        // Enter key to send message
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            
+            if (message) {
+                socket.emit('chat_message', { message: message });
+                messageInput.value = '';
+            }
+        }
+        
+        function addUserToList(user) {
+            const usersList = document.getElementById('users-list');
+            
+            // Check if user already exists
+            if (document.getElementById(`user-${user.id}`)) {
+                return;
+            }
+            
+            const userElement = document.createElement('div');
+            userElement.className = 'user-item';
+            userElement.id = `user-${user.id}`;
+            
+            const userIndicator = document.createElement('span');
+            userIndicator.className = 'user-indicator';
+            userIndicator.style.backgroundColor = user.color || '#FF6F61';
+            
+            const userName = document.createElement('span');
+            userName.className = 'user-name';
+            userName.textContent = user.name;
+            
+            if (user.is_admin) {
+                const adminBadge = document.createElement('span');
+                adminBadge.className = 'admin-badge';
+                adminBadge.textContent = 'ADMIN';
+                userElement.appendChild(adminBadge);
+            }
+            
+            userElement.appendChild(userIndicator);
+            userElement.appendChild(userName);
+            
+            usersList.appendChild(userElement);
+        }
+        
+        function removeUserFromList(userId) {
+            const userElement = document.getElementById(`user-${userId}`);
+            if (userElement) {
+                userElement.remove();
+            }
+        }
+        
+        function updateUsersList(users) {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+            
+            for (const userId in users) {
+                addUserToList(users[userId]);
+            }
+        }
+        
+        function addChatMessage(message) {
+            const chatMessages = document.getElementById('chat-messages');
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = 'chat-message';
+            
+            const messageHeader = document.createElement('div');
+            messageHeader.className = 'message-header';
+            
+            const userIndicator = document.createElement('span');
+            userIndicator.className = 'user-indicator';
+            userIndicator.style.backgroundColor = message.color || '#FF6F61';
+            
+            const userName = document.createElement('span');
+            userName.className = 'message-username';
+            userName.textContent = message.username;
+            
+            const timestamp = document.createElement('span');
+            timestamp.className = 'message-timestamp';
+            timestamp.textContent = new Date(message.timestamp).toLocaleTimeString();
+            
+            messageHeader.appendChild(userIndicator);
+            messageHeader.appendChild(userName);
+            messageHeader.appendChild(timestamp);
+            
+            const messageText = document.createElement('div');
+            messageText.className = 'message-text';
+            messageText.textContent = message.text;
+            
+            messageElement.appendChild(messageHeader);
+            messageElement.appendChild(messageText);
+            
+            chatMessages.appendChild(messageElement);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
